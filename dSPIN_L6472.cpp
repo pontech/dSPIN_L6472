@@ -720,7 +720,7 @@ void L6472::goUntil(byte act, byte dir, unsigned long spd){
     _DestinationPosition = -2097152;
 }
 
-void L6472::sensorStop(char pin, bool rising, bool positive){
+bool L6472::sensorStop(char pin, bool rising, bool positive){
   bool forward = (getStatus() & STATUS_DIR) > 0;
   if((forward && positive) || (!forward && !positive))
   {
@@ -728,8 +728,10 @@ void L6472::sensorStop(char pin, bool rising, bool positive){
     {
       hardStop();
       _HRunning = false;
+      return true;
     }
   }
+  return false;
 }
 
 bool L6472::getHRunning(){

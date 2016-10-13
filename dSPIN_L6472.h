@@ -301,7 +301,7 @@ class L6472{
 	void goTo(long pos);
 	void goTo_DIR(byte dir, long pos);
 	void goUntil(byte act, byte dir, unsigned long spd);
-	void sensorStop(char pin, bool rising, bool positive);
+	bool sensorStop(char pin, bool rising, bool positive);
 	boolean isBusy();
 	
 	void releaseSW(byte act, byte dir);

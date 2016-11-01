@@ -8,7 +8,7 @@
 #include <dSPIN_L6472.h>
 //#include <SPI.h>
 
-L6472::L6472(unsigned char BOARD_ID, int MOSIPin, int MISOPin, int SCKPin, int SSPin, int RSTPin)
+L6472::L6472(unsigned char BOARD_ID, int MOSIPin, int MISOPin, int SCKPin, int SSPin, int RSTPin, bool (*Safe_Move)(bool))
 {
 	_MOSI = MOSIPin;
 	_MISO = MISOPin;
@@ -18,6 +18,7 @@ L6472::L6472(unsigned char BOARD_ID, int MOSIPin, int MISOPin, int SCKPin, int S
 	_BOARD_ID = BOARD_ID;
 	_current = 45;
 	_current_holding = 15;
+	_Safe_Move = Safe_Move;
 }
 
 void L6472::setupPort()
@@ -94,14 +95,27 @@ void L6472::command(char* input, Stream* IOStream)
     }
     else if(strncmp(rxBuffParsPoint, "V?",2) == 0)  // Report a version number
     {
-      sprintf(str, "STP300 V1.0%s",lineend);
+      sprintf(str, "STP300 V1.1%s",lineend);
       _IOStream->print(str);
     }
     else if(strncmp(rxBuffParsPoint, "MI",2) == 0)  // Move Absolute
     {
       rxBuffParsPoint += findSpaceOffset(rxBuffParsPoint);
       cmmdVal = parseNumber(rxBuffParsPoint);
-      goTo(cmmdVal);
+      if(_Safe_Move != NULL)
+      {
+        int hold = getPos();
+        if(hold >= 0x200000)
+        {
+          hold |= ~0x3fffff; //0xFFE00000;
+        }
+        if(_Safe_Move(cmmdVal>hold))
+        {
+          goTo(cmmdVal);
+        }
+      } else {
+        goTo(cmmdVal);
+      }
 			sprintf(str, "%d%s", cmmdVal, lineend);
       _IOStream->print(str);
     }
@@ -109,7 +123,15 @@ void L6472::command(char* input, Stream* IOStream)
     {
       rxBuffParsPoint += findSpaceOffset(rxBuffParsPoint);
       cmmdVal = parseNumber(rxBuffParsPoint);
-      move(cmmdVal);    
+      if(_Safe_Move != NULL)
+      {
+        if(_Safe_Move(cmmdVal>0))
+        {
+          move(cmmdVal);    
+        }
+      } else {
+        move(cmmdVal);    
+      }
 			sprintf(str, "%d%s", cmmdVal, lineend);
       _IOStream->print(str);
     }
@@ -127,15 +149,33 @@ void L6472::command(char* input, Stream* IOStream)
     }
     else if(strncmp(rxBuffParsPoint, "H+",2) == 0)  // Home at Speed and direction
     {
-      goUntil(ACT_ACTIVE_LO, 1, 20000); //todo 3: get to move at same speed as other move commands
-      _HRunning = true;
+      if(_Safe_Move != NULL)
+      {
+        if(_Safe_Move(true))
+        {
+          goUntil(ACT_ACTIVE_LO, 1, 20000); //todo 3: get to move at same speed as other move commands
+          _HRunning = true;
+        }
+      } else {
+        goUntil(ACT_ACTIVE_LO, 1, 20000); //todo 3: get to move at same speed as other move commands
+        _HRunning = true;
+      }
       sprintf(str, "OK%s",lineend);
       _IOStream->print(str);
     }  
     else if(strncmp(rxBuffParsPoint, "H-",2) == 0)  // Home at Speed and direction
     {
-      goUntil(ACT_ACTIVE_LO, 0, 20000);                                            
-      _HRunning = true;
+      if(_Safe_Move != NULL)
+      {
+        if(_Safe_Move(false))
+        {
+          goUntil(ACT_ACTIVE_LO, 0, 20000);                                            
+          _HRunning = true;
+        }
+      } else {
+        goUntil(ACT_ACTIVE_LO, 0, 20000);                                            
+        _HRunning = true;
+      }
       sprintf(str, "OK%s",lineend);
       _IOStream->print(str);
     }  

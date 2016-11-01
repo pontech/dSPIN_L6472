@@ -265,7 +265,7 @@ class L6472{
 
   public:
 
-    L6472(unsigned char BOARD_ID, int MOSIPin, int MISOPin, int SCKPin, int SSPin, int RSTPin);
+    L6472(unsigned char BOARD_ID, int MOSIPin, int MISOPin, int SCKPin, int SSPin, int RSTPin, bool (*Safe_Move)(bool) = NULL);
 
 	void setupPort();
 	void command(char* input, Stream* IOStream);
@@ -356,6 +356,7 @@ class L6472{
 	long _current;
 	long _current_holding;
 	bool _HRunning;
+	bool (*_Safe_Move)(bool);
 	
 };
 #endif

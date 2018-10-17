@@ -279,6 +279,7 @@ class L6472{
 	
     void setMicroSteps(int microSteps);
     void setCurrent(float current);
+    void setCurrentHold(float current);
     void setMaxSpeed(int speed);
     void setMinSpeed(int speed);
     void setAcc(float acceleration);

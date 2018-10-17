@@ -22,6 +22,7 @@ setupPort		KEYWORD2
 init			KEYWORD2
 setMicroSteps		KEYWORD2
 setCurrent		KEYWORD2
+setCurrentHold		KEYWORD2
 setMaxSpeed		KEYWORD2
 setMinSpeed		KEYWORD2
 setAcc			KEYWORD2

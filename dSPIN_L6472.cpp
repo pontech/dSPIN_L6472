@@ -333,11 +333,13 @@ void L6472::command(char* input, Stream* IOStream)
       {
         rxBuffParsPoint += spaceoffset;
         bool new_paused = parseNumber(rxBuffParsPoint)>0;
-        if((new_paused != _paused) && !_paused)
+        unsigned int stat = GetParam(STATUS);
+        if((new_paused != _paused) && !_paused && ((stat & STATUS_MOT_STATUS) != 0))
         {
           //save destination position, halt axis
           _pDestinationPosition = getDest();
           softStop();
+          _paused = new_paused;
         }
         else if((new_paused != _paused) && _paused)
         {
@@ -350,8 +352,8 @@ void L6472::command(char* input, Stream* IOStream)
           {
             goTo(_pDestinationPosition);
           }
+          _paused = new_paused;
         }
-        _paused = new_paused;
       }
       sprintf(_str, "%d%s", _paused,_lineend);
       _IOStream->print(_str);

@@ -327,10 +327,9 @@ class L6472{
   	
   	bool getHRunning();
   private:
-  	
   	int convert(unsigned int val);
   	
-  
+	void PerformHCommand(bool PosDir, char* _str, char* _lineend); 
 	unsigned long AccCalc(float stepsPerSecPerSec);
 	unsigned long DecCalc(float stepsPerSecPerSec);
 	unsigned long RevAccDecCalc(long stepsPerTickPerTick);
@@ -356,7 +355,10 @@ class L6472{
 	long _current;
 	long _current_holding;
 	bool _HRunning;
+	bool _Hmoveingpos;
+	bool _paused;
+	long _pDestinationPosition;
 	bool (*_Safe_Move)(bool);
-	
+
 };
 #endif

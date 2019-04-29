@@ -590,6 +590,10 @@ void L6472::setCurrent(float current)
 	SetParam(TVAL_ACC, TVALCalc(current));
 	SetParam(TVAL_DEC, TVALCalc(current));	
 }
+void L6472::setCurrentHold(float current)
+{
+	SetParam(TVAL_HOLD, TVALCalc(current));
+}
 
 
 

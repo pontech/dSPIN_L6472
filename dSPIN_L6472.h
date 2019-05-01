@@ -42,7 +42,7 @@
 #define TVAL_DEC        0x0C        //length: 8       reset value: 29
 #define RESERVED1     	0x0D        //length: 16
 #define T_FAST          0x0E        //length: 8       reset value: 19
-#define TON_MIN			0x0F        //length: 7       reset value: 29
+#define TON_MIN			    0x0F        //length: 7       reset value: 29
 #define TOFF_MIN        0x10        //length: 7       reset value: 29
 #define RESERVED2       0x11        //length: 8
 #define ADC_OUT         0x12        //length: 5       reset value: 
@@ -331,6 +331,7 @@ class L6472{
   	int convert(unsigned int val);
   	
 	void PerformHCommand(bool PosDir, char* _str, char* _lineend); 
+	bool SendPausedStringIfNeeded(char* _str, char* _lineend);
 	unsigned long AccCalc(float stepsPerSecPerSec);
 	unsigned long DecCalc(float stepsPerSecPerSec);
 	unsigned long RevAccDecCalc(long stepsPerTickPerTick);
@@ -358,6 +359,7 @@ class L6472{
 	bool _HRunning;
 	bool _Hmoveingpos;
 	bool _paused;
+	bool _pauseMotionInterupted;
 	long _pDestinationPosition;
 	bool (*_Safe_Move)(bool);
 

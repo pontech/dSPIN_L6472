@@ -65,7 +65,7 @@ int L6472::parseNumber(char* s)
 unsigned char L6472::findSpaceOffset(char* s)
 {
   unsigned char i = 0;
-  while(s[i] != 0 && s[i] != ' ')
+  while(s[i] != 0 && s[i] != ' ') // && s[i] != '\r' && s[i] != '\n'
     i++;
   return i+1;
 }
@@ -85,8 +85,6 @@ void L6472::PerformHCommand(bool PosDir, char* _str, char* _lineend)
     _HRunning = true;
     _Hmoveingpos = PosDir;
   }
-  sprintf(_str, "OK%s",_lineend);
-  _IOStream->print(_str);
 }
 
 bool L6472::SendPausedStringIfNeeded(char* _str, char* _lineend)
@@ -183,11 +181,15 @@ void L6472::command(char* input, Stream* IOStream)
     {
       if(SendPausedStringIfNeeded(&_str[0], &_lineend[0])){return;}
       PerformHCommand(true, &_str[0], &_lineend[0]);
+      sprintf(_str, "OK%s",_lineend);
+      _IOStream->print(_str);
     }  
     else if(strncmp(rxBuffParsPoint, "H-",2) == 0)  // Home at Speed and direction
     {
       if(SendPausedStringIfNeeded(&_str[0], &_lineend[0])){return;}
       PerformHCommand(false, &_str[0], &_lineend[0]);
+      sprintf(_str, "OK%s",_lineend);
+      _IOStream->print(_str);
     }  
     else if(strncmp(rxBuffParsPoint, "HI",2) == 0)  // Halt Immediately
     {
@@ -375,13 +377,16 @@ void L6472::command(char* input, Stream* IOStream)
         }
         _paused = false;
       }
+      else if(((new_paused == 1) && _paused ) || ((new_paused == 0) && !_paused ))
+      {
+        //do nothing state unchanged
+      }
       else //any number but 1 or zero aborts pause without moving
       {
         _paused = false;
       }
-      //Pause does not return a value to avoid interfering with communications between STP300 and computer 
-      //sprintf(_str, "%d%s", _paused,_lineend);
-      //_IOStream->print(_str);
+      sprintf(_str, "%d%s", _paused,_lineend);
+      _IOStream->print(_str);
     }      
     else if(strncmp(rxBuffParsPoint, "RPA", 2) == 0)  // read pause state
     {

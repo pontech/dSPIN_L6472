@@ -74,7 +74,7 @@ void L6472::PerformHCommand(bool PosDir, char* _str, char* _lineend)
 {
   if(_Safe_Move != NULL)
   {
-    if(_Safe_Move(true))
+    if(_Safe_Move((PosDir ? true : false)))
     {
       goUntil(ACT_ACTIVE_LO, (PosDir ? 1 : 0), 20000); //todo 3: get to move at same speed as other move commands
       _HRunning = true;
@@ -122,7 +122,7 @@ void L6472::command(char* input, Stream* IOStream)
     }
     else if(strncmp(rxBuffParsPoint, "V?",2) == 0)  // Report a version number
     {
-      sprintf(_str, "STP300 V1.2%s",_lineend);
+      sprintf(_str, "STP300 V1.21%s",_lineend);
       _IOStream->print(_str);
     }
     else if(strncmp(rxBuffParsPoint, "MI",2) == 0)  // Move Absolute

@@ -268,6 +268,8 @@ class L6472{
     L6472(unsigned char BOARD_ID, int MOSIPin, int MISOPin, int SCKPin, int SSPin, int RSTPin, bool (*Safe_Move)(bool) = NULL);
 
 	void setupPort();
+	void mi(int32_t steps);
+	void ii(int32_t steps);
 	void command(char* input, Stream* IOStream);
 	int parseNumber(char* s);
 	unsigned char findSpaceOffset(char* s);

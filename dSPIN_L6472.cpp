@@ -97,6 +97,37 @@ bool L6472::SendPausedStringIfNeeded(char* _str, char* _lineend)
   return _paused;
 }
 
+void L6472::mi(int32_t steps)
+{
+	if(_Safe_Move != NULL)
+	{
+		int hold = getPos();
+		if(hold >= 0x200000)
+		{
+			hold |= ~0x3fffff; //0xFFE00000;
+		}
+		if(_Safe_Move(steps>hold))
+		{
+			goTo(steps);
+		}
+	} else {
+		goTo(steps);
+	}
+}
+
+void L6472::ii(int32_t steps)
+{
+	if(_Safe_Move != NULL)
+	{
+		if(_Safe_Move(steps>0))
+		{
+			move(steps);    
+		}
+	} else {
+		move(steps);    
+	}
+}
+
 void L6472::command(char* input, Stream* IOStream)
 {
   _IOStream = IOStream;
@@ -105,7 +136,7 @@ void L6472::command(char* input, Stream* IOStream)
   if (input[0] == '/' && parseNumber(input+1) == _BOARD_ID)
   {        
     char* rxBuffParsPoint = input + findSpaceOffset(input);
-    int cmmdVal;
+    int32_t cmmdVal;
     // sprintf(_str, "CMMD:[%c%c] Board[%d] Drive[%d] %d\r\n", cmmd1, cmmd2, boardID, axisID, cmmdVal);            
     // _IOStream->print(_str);
 
@@ -127,42 +158,21 @@ void L6472::command(char* input, Stream* IOStream)
     }
     else if(strncmp(rxBuffParsPoint, "MI",2) == 0)  // Move Absolute
     {
-      if(SendPausedStringIfNeeded(&_str[0], &_lineend[0])){return;}
-      rxBuffParsPoint += findSpaceOffset(rxBuffParsPoint);
-      cmmdVal = parseNumber(rxBuffParsPoint);
-      if(_Safe_Move != NULL)
-      {
-        int hold = getPos();
-        if(hold >= 0x200000)
-        {
-          hold |= ~0x3fffff; //0xFFE00000;
-        }
-        if(_Safe_Move(cmmdVal>hold))
-        {
-          goTo(cmmdVal);
-        }
-      } else {
-        goTo(cmmdVal);
-      }
-			sprintf(_str, "%d%s", cmmdVal, _lineend);
-      _IOStream->print(_str);
+		if(SendPausedStringIfNeeded(&_str[0], &_lineend[0])){return;}
+		rxBuffParsPoint += findSpaceOffset(rxBuffParsPoint);
+		cmmdVal = parseNumber(rxBuffParsPoint);
+		mi(cmmdVal);
+		sprintf(_str, "%d%s", cmmdVal, _lineend);
+		_IOStream->print(_str);
     }
     else if(strncmp(rxBuffParsPoint, "II",2) == 0)  // Move Incramental
     {
-      if(SendPausedStringIfNeeded(&_str[0], &_lineend[0])){return;}
-      rxBuffParsPoint += findSpaceOffset(rxBuffParsPoint);
-      cmmdVal = parseNumber(rxBuffParsPoint);
-      if(_Safe_Move != NULL)
-      {
-        if(_Safe_Move(cmmdVal>0))
-        {
-          move(cmmdVal);    
-        }
-      } else {
-        move(cmmdVal);    
-      }
-			sprintf(_str, "%d%s", cmmdVal, _lineend);
-      _IOStream->print(_str);
+		if(SendPausedStringIfNeeded(&_str[0], &_lineend[0])){return;}
+		rxBuffParsPoint += findSpaceOffset(rxBuffParsPoint);
+		cmmdVal = parseNumber(rxBuffParsPoint);
+		ii(cmmdVal);
+		sprintf(_str, "%d%s", cmmdVal, _lineend);
+		_IOStream->print(_str);
     }
     else if(strncmp(rxBuffParsPoint, "HM",2) == 0)  // Set Home
     {
@@ -214,17 +224,17 @@ void L6472::command(char* input, Stream* IOStream)
     }  
     else if(strncmp(rxBuffParsPoint, "RC",2) == 0)  // Read Current (Position)
     {
-      int hold = getPos();
+      int32_t hold = getPos();
         if(hold >= 0x200000)
         {
           hold |= ~0x3fffff; //0xFFE00000;
         }
-      sprintf(_str, "%d%s", (int)hold,_lineend);
+      sprintf(_str, "%d%s", (int32_t)hold,_lineend);
       _IOStream->print(_str);
     }
     else if(strncmp(rxBuffParsPoint, "RX",2) == 0)  // Read Delta Sign SignOf(Destination - Current)
     {
-      unsigned int stat = GetParam(STATUS);
+      int32_t stat = GetParam(STATUS);
       if(_paused)
       {
           sprintf(_str, "P%s",_lineend);

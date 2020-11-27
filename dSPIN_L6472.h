@@ -315,12 +315,13 @@ class L6472{
 	void releaseSW(byte act, byte dir);
 	
 	float getSpeed();
-	long stp300_RC();
 	void stp300_HM(long newposition); // setPos
-	long stp300_RD();
-	long stp300_RT();
+	int32_t stp300_RC();
+	int32_t stp300_RD();
+	int32_t stp300_RT();
+	int32_t stp300_RX();
 	void setMark();
-	void setMark(long value);
+	void setMark(int32_t value);
 	
 	inline void stp300_SP(void);
 	inline void stp300_SO(void);
@@ -342,7 +343,8 @@ class L6472{
   	
   	bool getHRunning();
   private:
-  	int convert(unsigned int val);
+  	int32_t convert(uint32_t val);
+  	int32_t convert_alt(uint32_t val);
   	
 	void stp300_H(bool positive_direction);
 	bool SendPausedStringIfNeeded(char* _str, char* _lineend);
@@ -367,14 +369,14 @@ class L6472{
 	int _RST;
 	unsigned char _BOARD_ID;
 	Stream* _IOStream;
-	long _DestinationPosition;
-	long _current;
-	long _current_holding;
+	int32_t _DestinationPosition;
+	int32_t _current;
+	int32_t _current_holding;
 	bool _HRunning;
 	bool _Hmoveingpos;
 	bool _paused;
 	bool _pauseMotionInterrupted;
-	long _pDestinationPosition;
+	int32_t _pDestinationPosition;
 	bool (*_Safe_Move)(bool);
 };
 #endif

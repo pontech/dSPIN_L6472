@@ -101,12 +101,8 @@ void L6472::stp300_MI(int32_t steps)
 {
 	if(_Safe_Move != NULL)
 	{
-		int hold = stp300_RC();
-		if(hold >= 0x200000)
-		{
-			hold |= ~0x3fffff; //0xFFE00000;
-		}
-		if(_Safe_Move(steps>hold))
+		int32_t position = stp300_RC();
+		if(_Safe_Move(steps>position))
 		{
 			goTo(steps);
 		}
@@ -196,7 +192,7 @@ pause_state L6472::stp300_RPA(void)
 void L6472::command(char* input, Stream* IOStream)
 {
   _IOStream = IOStream;
-  char _lineend[] = "\r";
+  char _lineend[] = "\r\n";
   char _str[80];
   if (input[0] == '/' && parseNumber(input+1) == _BOARD_ID)
   {        
@@ -233,7 +229,9 @@ void L6472::command(char* input, Stream* IOStream)
 		if(SendPausedStringIfNeeded(&_str[0], &_lineend[0])){return;}
 		rxBuffParsPoint += findSpaceOffset(rxBuffParsPoint);
 		cmmdVal = parseNumber(rxBuffParsPoint);
+		
 		stp300_MI(cmmdVal);
+		
 		sprintf(_str, "%d%s", cmmdVal, _lineend);
 		_IOStream->print(_str);
     }
@@ -242,7 +240,9 @@ void L6472::command(char* input, Stream* IOStream)
 		if(SendPausedStringIfNeeded(&_str[0], &_lineend[0])){return;}
 		rxBuffParsPoint += findSpaceOffset(rxBuffParsPoint);
 		cmmdVal = parseNumber(rxBuffParsPoint);
+		
 		stp300_II(cmmdVal);
+		
 		sprintf(_str, "%d%s", cmmdVal, _lineend);
 		_IOStream->print(_str);
     }
@@ -256,69 +256,71 @@ void L6472::command(char* input, Stream* IOStream)
         cmmdVal = parseNumber(rxBuffParsPoint);
         stp300_HM(cmmdVal); //SetParam(ABS_POS, cmmdVal);
       }
+	  
       sprintf(_str, "OK%s",_lineend);
       _IOStream->print(_str);
     }
     else if(strncmp(rxBuffParsPoint, "H+",2) == 0)  // Home at Speed and direction
     {
       if(SendPausedStringIfNeeded(&_str[0], &_lineend[0])){return;}
+	  
       stp300_H(true);
+	  
       sprintf(_str, "OK%s",_lineend);
       _IOStream->print(_str);
     }  
     else if(strncmp(rxBuffParsPoint, "H-",2) == 0)  // Home at Speed and direction
     {
       if(SendPausedStringIfNeeded(&_str[0], &_lineend[0])){return;}
+	  
       stp300_H(false);
+	  
       sprintf(_str, "OK%s",_lineend);
       _IOStream->print(_str);
     }  
     else if(strncmp(rxBuffParsPoint, "HI",2) == 0)  // Halt Immediately
     {
       if(SendPausedStringIfNeeded(&_str[0], &_lineend[0])){return;}
+	  
 	  stp300_HI();
+	  
       sprintf(_str, "OK%s",_lineend);
       _IOStream->print(_str);
     }  
     else if(strncmp(rxBuffParsPoint, "H0",2) == 0)  // Halt with deceleration
     {
       if(SendPausedStringIfNeeded(&_str[0], &_lineend[0])){return;}
+	  
 	  stp300_H0();
+	  
       sprintf(_str, "OK%s",_lineend);
       _IOStream->print(_str);
     }  
     else if(strncmp(rxBuffParsPoint, "RC",2) == 0)  // Read Current (Position)
     {
-      int32_t hold = stp300_RC();
-        if(hold >= 0x200000)
-        {
-          hold |= ~0x3fffff; //0xFFE00000;
-        }
-      sprintf(_str, "%d%s", (int32_t)hold,_lineend);
-      _IOStream->print(_str);
+		int32_t position = stp300_RC();
+		
+		sprintf(_str, "%d%s", (int32_t)position,_lineend);
+		_IOStream->print(_str);
     }
     else if(strncmp(rxBuffParsPoint, "RX",2) == 0)  // Read Delta Sign SignOf(Destination - Current)
     {
-      int32_t stat = GetParam(STATUS);
-      if(_paused)
-      {
-          sprintf(_str, "P%s",_lineend);
-          _IOStream->print(_str);
-      }
-      else
-      {
-        if((stat & STATUS_MOT_STATUS) == 0)
-        {
-          sprintf(_str, "0%s",_lineend);
-          _IOStream->print(_str);
-        } else if ((stat & STATUS_DIR) == 0)  {
-          sprintf(_str, "-%s",_lineend);
-          _IOStream->print(_str);
-        } else {
-          sprintf(_str, "+%s",_lineend);
-          _IOStream->print(_str);
-        }
-      }
+		switch(stp300_RX())
+		{
+			case -1:
+				_IOStream->print("-"); 
+				break;
+			case 0:
+				_IOStream->print("0"); 
+				break;
+			case 1:
+				_IOStream->print("+");
+				break;
+			case 'P':
+				_IOStream->print("P"); 
+				break;
+		}
+	  _IOStream->print(_lineend);
     }
     else if(strncmp(rxBuffParsPoint, "RT",2) == 0)  // Read Delta (Destination - Current)
     {
@@ -333,6 +335,7 @@ void L6472::command(char* input, Stream* IOStream)
     else if(strncmp(rxBuffParsPoint, "SP",2) == 0)  // Stepper Powered
     {
 	  stp300_SP();
+	  
       sprintf(_str, "OK%s",_lineend);
       _IOStream->print(_str);
     }
@@ -350,12 +353,12 @@ void L6472::command(char* input, Stream* IOStream)
       rxBuffParsPoint += findSpaceOffset(rxBuffParsPoint);
       cmmdVal = parseNumber(rxBuffParsPoint);
 	  
-      sprintf(_str, "%d%s", cmmdVal,_lineend);
-      _IOStream->print(_str);
-              
       cmmdVal = (cmmdVal>0x000003FF) ? 0x000003FF : cmmdVal;
       SetParam(MAX_SPEED, cmmdVal);
       //setMaxSpeed(cmmdVal);
+
+      sprintf(_str, "%d%s", cmmdVal,_lineend);
+      _IOStream->print(_str);
     }      
     else if(strncmp(rxBuffParsPoint, "RSD",3) == 0)  // get Speed Max
     {
@@ -438,13 +441,16 @@ void L6472::command(char* input, Stream* IOStream)
     {
       rxBuffParsPoint += findSpaceOffset(rxBuffParsPoint);
       uint8_t new_paused = parseNumber(rxBuffParsPoint);
+	  
 	  stp300_PA(new_paused);
+	  
       sprintf(_str, "%d%s", _paused,_lineend);
       _IOStream->print(_str);
     }      
     else if(strncmp(rxBuffParsPoint, "RPA", 2) == 0)  // read pause state
     {
 		pause_state result = stp300_RPA();
+		
 		sprintf(_str, "%d %d%s", result.paused,result.pauseMotionInterrupted,_lineend);
 		_IOStream->print(_str);
     }      
@@ -731,10 +737,9 @@ void L6472::setDec(float deceleration)
 	SetParam(DECEL, decelerationBYTES);
 }
 
-
-long L6472::stp300_RC()
+int32_t L6472::stp300_RC()
 {
-	unsigned long position = GetParam(ABS_POS);
+	uint32_t position = GetParam(ABS_POS);
 	return convert(position);
 }
 
@@ -744,14 +749,28 @@ void L6472::stp300_HM(long newposition)
   _DestinationPosition = newposition;
 }
 
-long L6472::stp300_RD()
+int32_t L6472::stp300_RD()
 {
 	return _DestinationPosition;
 }
 
-long L6472::stp300_RT()
+int32_t L6472::stp300_RT()
 {
 	return stp300_RD() - stp300_RC();
+}
+
+int32_t L6472::stp300_RX()
+{
+	int32_t stat = GetParam(STATUS);
+	if(_paused)
+		return (int32_t)'P';
+	else
+		if((stat & STATUS_MOT_STATUS) == 0)
+			return 0;
+		else if ((stat & STATUS_DIR) == 0)
+			return -1;
+		else
+			return 1;
 }
 
 float L6472::getSpeed(){
@@ -933,7 +952,7 @@ void L6472::goMark(){
 }
 
 
-void L6472::setMark(long value){
+void L6472::setMark(int32_t value){
 	
 	Xfer(MARK);
 	if (value > 0x3FFFFF) value = 0x3FFFFF;
@@ -947,9 +966,9 @@ void L6472::setMark(long value){
 
 
 void L6472::setMark(){
-	long value = stp300_RC();
+	int32_t value = stp300_RC();
 	
-		Xfer(MARK);
+	Xfer(MARK);
 	if (value > 0x3FFFFF) value = 0x3FFFFF;
 	if (value < -0x3FFFFF) value = -0x3FFFFF;
 	
@@ -1172,15 +1191,26 @@ unsigned int L6472::GetParam(byte param){
 	return ParamHandler(param, 0);
 }
 
-int L6472::convert(unsigned int val){
-	//convert 22bit 2s comp to signed long  
-	int MSB = val >> 21;
+int32_t L6472::convert(uint32_t val){
+	//convert 22bit 2s comp to int32_t (32bit 2s comp)
+	int MSB = val >> 21; // Put the sign bit into the LSB of MSB.
 	
-	val = val << 11;
+	val = val << 11;  // Blow away the ll MSB's of VAL
 	val = val >> 11;
 	
 	if(MSB == 1) val = val | 0b11111111111000000000000000000000;
 	return val;
+
+	//val &= 0x1FFFFF; // This would do the same thing as the above two lines.
+	//if(val & 0x200000) val = val | 0b1111 1111 1110 0000 0000 0000 0000 0000;
+	//return val;
+}
+
+int32_t L6472::convert_alt(uint32_t val){
+	//convert 22bit 2s comp to int32_t (32bit 2s comp)
+	if(val & 0x200000) val |= 0xFFE00000; // Negitive number, extend sign bit.
+	else val &= 0x1FFFFF; // Mask out 11 MSBs
+	return (int32_t)val;
 }
 
 unsigned int L6472::ParamHandler(byte param, unsigned int value){

@@ -261,6 +261,11 @@
 #define ACT_ACTIVE_LO   0x00
 #define ACT_ACTIVE_HI   0x08
 
+typedef struct {
+	bool paused;
+	bool pauseMotionInterrupted;
+} pause_state;
+
 class L6472{
 
   public:
@@ -268,15 +273,15 @@ class L6472{
     L6472(unsigned char BOARD_ID, int MOSIPin, int MISOPin, int SCKPin, int SSPin, int RSTPin, bool (*Safe_Move)(bool) = NULL);
 
 	void setupPort();
-	void mi(int32_t steps);
-	void ii(int32_t steps);
+	void stp300_MI(int32_t steps);
+	void stp300_II(int32_t steps);
 	void command(char* input, Stream* IOStream);
 	int parseNumber(char* s);
 	unsigned char findSpaceOffset(char* s);
 	void BoardId(unsigned char newId);	
 
 	//int init(float current, float hold_current);
-  int init(float current, float hold_current, bool userawcurrent = false);
+	int init(float current, float hold_current, bool userawcurrent = false);
 	int init2(float current, float hold_current);
 	
     void setMicroSteps(int microSteps);
@@ -310,13 +315,17 @@ class L6472{
 	void releaseSW(byte act, byte dir);
 	
 	float getSpeed();
-	long getPos();
-	void setPos(long newposition);
-	long getDest();
+	long stp300_RC();
+	void stp300_HM(long newposition); // setPos
+	long stp300_RD();
+	long stp300_RT();
 	void setMark();
 	void setMark(long value);
 	
-	
+	inline void stp300_SP(void);
+	inline void stp300_SO(void);
+	void stp300_H0(void);
+	void stp300_HI(void);
 	void resetPos();
 	void resetDev();
 	void softStop();
@@ -325,6 +334,9 @@ class L6472{
 	void free();
 	int getStatus();
     
+	bool stp300_PA(uint8_t new_paused);
+	pause_state stp300_RPA(void);
+
 	unsigned int GetParam(byte param);
   	void SetParam(byte param, unsigned int value);
   	
@@ -332,7 +344,7 @@ class L6472{
   private:
   	int convert(unsigned int val);
   	
-	void PerformHCommand(bool PosDir, char* _str, char* _lineend); 
+	void stp300_H(bool positive_direction);
 	bool SendPausedStringIfNeeded(char* _str, char* _lineend);
 	unsigned long AccCalc(float stepsPerSecPerSec);
 	unsigned long DecCalc(float stepsPerSecPerSec);
@@ -361,9 +373,8 @@ class L6472{
 	bool _HRunning;
 	bool _Hmoveingpos;
 	bool _paused;
-	bool _pauseMotionInterupted;
+	bool _pauseMotionInterrupted;
 	long _pDestinationPosition;
 	bool (*_Safe_Move)(bool);
-
 };
 #endif
